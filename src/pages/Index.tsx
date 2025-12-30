@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import FileUpload from "@/components/FileUpload";
+import StudentList from "@/components/StudentList";
 import Features from "@/components/Features";
 import Footer from "@/components/Footer";
 
@@ -22,6 +23,7 @@ const Index = () => {
         <main className="flex-1">
           <Hero />
           <FileUpload />
+          <StudentList />
           <Features />
         </main>
         

@@ -3,16 +3,14 @@ import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from "luc
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { parseExcelFile } from "@/lib/excelParser";
+import { addStudents } from "@/lib/studentStorage";
 
-interface FileUploadProps {
-  onUpload?: (file: File) => void;
-}
-
-const FileUpload = ({ onUpload }: FileUploadProps) => {
+const FileUpload = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [processedCount, setProcessedCount] = useState(0);
   const { toast } = useToast();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -75,23 +73,40 @@ const FileUpload = ({ onUpload }: FileUploadProps) => {
     
     setIsProcessing(true);
     
-    // Simulate processing - in real app, this would call backend
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsProcessing(false);
-    setIsComplete(true);
-    
-    toast({
-      title: "Processing Complete",
-      description: "Certificates have been generated successfully. Backend integration required for full functionality.",
-    });
-    
-    onUpload?.(file);
+    try {
+      const students = await parseExcelFile(file);
+      
+      if (students.length === 0) {
+        throw new Error("No valid student records found");
+      }
+      
+      addStudents(students);
+      setProcessedCount(students.length);
+      
+      // Dispatch custom event to notify StudentList
+      window.dispatchEvent(new CustomEvent("studentsUpdated"));
+      
+      toast({
+        title: "Processing Complete",
+        description: `Successfully generated ${students.length} certificate(s).`,
+      });
+      
+      // Reset for next upload
+      setFile(null);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to process file",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReset = () => {
     setFile(null);
-    setIsComplete(false);
+    setProcessedCount(0);
   };
 
   return (
@@ -164,26 +179,10 @@ const FileUpload = ({ onUpload }: FileUploadProps) => {
                         {(file.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
-                    {isComplete ? (
-                      <CheckCircle2 className="h-5 w-5 text-success" />
-                    ) : isProcessing ? (
+                    {isProcessing && (
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    ) : null}
+                    )}
                   </div>
-
-                  {isComplete ? (
-                    <div className="rounded-lg bg-success/10 p-4">
-                      <div className="flex items-start gap-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
-                        <div>
-                          <p className="font-medium text-success">Processing Complete!</p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Connect to Lovable Cloud to enable full certificate generation and storage.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
 
                   <div className="flex gap-3">
                     <Button
@@ -194,22 +193,20 @@ const FileUpload = ({ onUpload }: FileUploadProps) => {
                     >
                       Choose Different File
                     </Button>
-                    {!isComplete && (
-                      <Button
-                        onClick={handleProcess}
-                        disabled={isProcessing}
-                        className="flex-1"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          "Generate Certificates"
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={handleProcess}
+                      disabled={isProcessing}
+                      className="flex-1"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        "Generate Certificates"
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
@@ -5,43 +6,32 @@ import Footer from "@/components/Footer";
 import CertificatePreview from "@/components/CertificatePreview";
 import { CheckCircle2, XCircle, Award, Calendar, Users, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { getStudentById } from "@/lib/studentStorage";
+import { generateQRCode } from "@/lib/qrGenerator";
 import type { Student } from "@/types/student";
-
-// Mock data for demonstration - in production, this would come from the database
-const mockStudents: Record<string, Student> = {
-  "ICES-2024-001": {
-    id: "ICES-2024-001",
-    studentName: "Sakshi Raghav",
-    email: "sakshi.raghav@email.com",
-    mobileNumber: "+91 98765 43210",
-    address: "New Delhi, India",
-    batchNumber: "BATCH-2024-Q1",
-    courseName: "Java Programming Certification",
-    courseStartDate: "2024-01-15",
-    courseEndDate: "2024-03-15",
-    certificateIssueDate: "2024-03-20",
-    isValid: true,
-    createdAt: "2024-03-20T10:00:00Z",
-  },
-  "ICES-2024-002": {
-    id: "ICES-2024-002",
-    studentName: "Rahul Sharma",
-    email: "rahul.sharma@email.com",
-    mobileNumber: "+91 98765 43211",
-    address: "Mumbai, India",
-    batchNumber: "BATCH-2024-Q1",
-    courseName: "Web Development Bootcamp",
-    courseStartDate: "2024-02-01",
-    courseEndDate: "2024-04-01",
-    certificateIssueDate: "2024-04-05",
-    isValid: true,
-    createdAt: "2024-04-05T10:00:00Z",
-  },
-};
 
 const Verify = () => {
   const { studentId } = useParams<{ studentId: string }>();
-  const student = studentId ? mockStudents[studentId] : undefined;
+  const [student, setStudent] = useState<Student | undefined>();
+  const [qrCode, setQrCode] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStudent = async () => {
+      if (studentId) {
+        const foundStudent = getStudentById(studentId);
+        setStudent(foundStudent);
+        
+        if (foundStudent) {
+          const qr = await generateQRCode(foundStudent.id);
+          setQrCode(qr);
+        }
+      }
+      setIsLoading(false);
+    };
+    
+    loadStudent();
+  }, [studentId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -50,6 +40,14 @@ const Verify = () => {
       day: 'numeric'
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!student) {
     return (
@@ -170,7 +168,7 @@ const Verify = () => {
                   <h2 className="mb-6 text-center text-xl font-semibold text-foreground">
                     Certificate Preview
                   </h2>
-                  <CertificatePreview student={student} />
+                  <CertificatePreview student={student} qrCode={qrCode} />
                 </div>
 
                 {/* Organization Info */}
