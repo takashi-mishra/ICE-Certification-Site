@@ -1,11 +1,12 @@
-import { Award, QrCode } from "lucide-react";
+import { Award } from "lucide-react";
 import type { Student } from "@/types/student";
 
 interface CertificatePreviewProps {
   student: Student;
+  qrCode?: string;
 }
 
-const CertificatePreview = ({ student }: CertificatePreviewProps) => {
+const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -100,11 +101,19 @@ const CertificatePreview = ({ student }: CertificatePreviewProps) => {
             <p className="text-xs text-muted-foreground">Director, ICES</p>
           </div>
 
-          {/* QR Code Placeholder */}
+          {/* QR Code */}
           <div className="text-center">
-            <div className="mb-2 flex h-24 w-24 items-center justify-center rounded-lg bg-muted">
-              <QrCode className="h-16 w-16 text-muted-foreground" />
-            </div>
+            {qrCode ? (
+              <img
+                src={qrCode}
+                alt="QR Code for verification"
+                className="mb-2 h-24 w-24 rounded-lg"
+              />
+            ) : (
+              <div className="mb-2 flex h-24 w-24 items-center justify-center rounded-lg bg-muted">
+                <span className="text-xs text-muted-foreground">QR Code</span>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">Scan to verify</p>
           </div>
         </div>
