@@ -27,7 +27,7 @@ const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
             <div>
               <h2 className="font-serif text-2xl font-bold text-primary">ICES</h2>
               <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                Institute of Continuing Education
+                Institution of Civil Engineering Society
               </p>
             </div>
           </div>
