@@ -15,33 +15,40 @@ export const generateQRCode = async (
   } else {
     try {
       // Try to compress the payload using lz-string to reduce QR density. Fall back to base64 if not available.
-      const payload = (() => {
-        const raw = JSON.stringify(studentOrId);
-        try {
-          // dynamic import so the dependency is optional at runtime during development
-          // and to avoid bundling issues in some setups
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const LZString = require("lz-string");
-          return encodeURIComponent(LZString.compressToEncodedURIComponent(raw));
-        } catch {
-          try {
-            return encodeURIComponent(btoa(raw));
-          } catch {
-            // Handle unicode by encoding to UTF-8 bytes first
-            const str = raw;
-            const bytes = new TextEncoder().encode(str);
-            let binary = "";
-            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-            return encodeURIComponent(btoa(binary));
-          }
+      const raw = JSON.stringify(studentOrId);
+      let payload: string | null = null;
+
+      try {
+        // dynamic import so the dependency is optional at runtime and to avoid bundling issues
+        const mod = await import("lz-string");
+        const LZString = (mod && (mod.default ?? mod)) as any;
+        if (LZString && typeof LZString.compressToEncodedURIComponent === "function") {
+          payload = encodeURIComponent(LZString.compressToEncodedURIComponent(raw));
         }
-      })();
+      } catch (err) {
+        // dynamic import failed; we'll fall back to base64
+        console.debug("lz-string not available, falling back to base64");
+      }
+
+      if (!payload) {
+        try {
+          payload = encodeURIComponent(btoa(raw));
+        } catch {
+          // Handle unicode by encoding to UTF-8 bytes first
+          const str = raw;
+          const bytes = new TextEncoder().encode(str);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+          payload = encodeURIComponent(btoa(binary));
+        }
+      }
 
       // Use fragment/hash so servers/proxies don't treat the long payload as part of the request URL
       verifyUrl = `${window.location.origin}/verify/${studentOrId.id}#data=${payload}`;
     } catch (err) {
       // Fallback to basic verify URL on error
-      verifyUrl = `${window.location.origin}/verify/${studentOrId.id}`;
+      console.error("Failed to build QR payload:", err);
+      verifyUrl = `${window.location.origin}/verify/${(studentOrId as Student).id}`;
     }
   }
 
