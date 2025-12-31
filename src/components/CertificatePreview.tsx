@@ -118,11 +118,59 @@ const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
           </div>
         </div>
 
-        {/* Verification URL */}
+        {/* Verification URL (shortened UI + copy) */}
         <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            Verify at: {window.location.origin}/verify/{student.id}
-          </p>
+          {(() => {
+            // Compute the verify link (same logic as before but extracted for reuse)
+            let verifyLink: string;
+            try {
+              const payload = (() => {
+                try {
+                  return encodeURIComponent(btoa(JSON.stringify(student)));
+                } catch {
+                  const str = JSON.stringify(student);
+                  const bytes = new TextEncoder().encode(str);
+                  let binary = "";
+                  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                  return encodeURIComponent(btoa(binary));
+                }
+              })();
+              verifyLink = `${window.location.origin}/verify/${student.id}?data=${payload}`;
+            } catch {
+              verifyLink = `${window.location.origin}/verify/${student.id}`;
+            }
+
+            return (
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-xs text-muted-foreground truncate max-w-[420px]">
+                  Verify at: <a className="underline" href={verifyLink} target="_blank" rel="noopener noreferrer">{verifyLink}</a>
+                </p>
+                <button
+                  type="button"
+                  aria-label="Copy verification link"
+                  className="inline-flex items-center justify-center rounded-md border border-border bg-card px-2 py-1 text-xs hover:bg-accent/70"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(verifyLink);
+                      // Use the global toast system if available
+                      try {
+                        // dynamic import to avoid circular deps in some setups
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({ title: "Verification link copied", description: "You can paste it anywhere to share." });
+                      } catch {
+                        // fallback to alert if toast isn't available
+                        alert("Verification link copied to clipboard");
+                      }
+                    } catch (err) {
+                      alert("Failed to copy link");
+                    }
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -18,6 +18,9 @@ const Verify = () => {
 
   useEffect(() => {
     const loadStudent = async () => {
+      // Diagnostic: log incoming studentId and query params
+      console.debug("Verify page params:", { studentId, search: window.location.search });
+
       // Check for embedded student data in the query param (QR payload)
       const params = new URLSearchParams(window.location.search);
       const dataParam = params.get("data");
@@ -25,6 +28,7 @@ const Verify = () => {
       if (dataParam) {
         try {
           const decoded = JSON.parse(atob(decodeURIComponent(dataParam)));
+          console.debug("Decoded QR payload:", decoded);
           setStudent(decoded as Student);
 
           // Persist to storage if not already present so verification works offline later
@@ -43,6 +47,7 @@ const Verify = () => {
 
       if (studentId) {
         const foundStudent = getStudentById(studentId);
+        console.debug("Lookup by ID result:", foundStudent);
         setStudent(foundStudent);
 
         if (foundStudent) {
