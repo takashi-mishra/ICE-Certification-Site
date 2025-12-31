@@ -34,7 +34,24 @@ const Verify = () => {
 
       if (dataParam) {
         try {
-          const decoded = JSON.parse(atob(decodeURIComponent(dataParam)));
+          // Try to decompress using lz-string first, fall back to base64
+          let jsonStr: string | null = null;
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const LZString = require("lz-string");
+            const decompressed = LZString.decompressFromEncodedURIComponent(decodeURIComponent(dataParam));
+            if (decompressed) jsonStr = decompressed;
+          } catch {
+            try {
+              jsonStr = atob(decodeURIComponent(dataParam));
+            } catch {
+              // ignore and let outer catch handle it
+            }
+          }
+
+          if (!jsonStr) throw new Error("Failed to decode data payload");
+
+          const decoded = JSON.parse(jsonStr);
           console.debug("Decoded QR payload:", decoded);
           setStudent(decoded as Student);
 

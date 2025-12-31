@@ -87,6 +87,7 @@ How to test:
 Notes:
 - The app still supports local verification (localStorage) when accessed on the original device.
 - For stronger security in production, consider signing the payload on a server so it cannot be forged locally.
+- To reduce QR density and improve scan reliability, the app now compresses the embedded payload using `lz-string` when available. Install it locally: `npm i lz-string`.
 - If deploying to Vercel or other static hosts, add a rewrite so SPA routes (like `/verify/:id`) return `index.html`. Example `vercel.json`:
 
 ```json

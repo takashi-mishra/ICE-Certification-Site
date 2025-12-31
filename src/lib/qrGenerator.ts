@@ -14,16 +14,26 @@ export const generateQRCode = async (
     verifyUrl = `${window.location.origin}/verify/${studentOrId}`;
   } else {
     try {
+      // Try to compress the payload using lz-string to reduce QR density. Fall back to base64 if not available.
       const payload = (() => {
+        const raw = JSON.stringify(studentOrId);
         try {
-          return encodeURIComponent(btoa(JSON.stringify(studentOrId)));
+          // dynamic import so the dependency is optional at runtime during development
+          // and to avoid bundling issues in some setups
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const LZString = require("lz-string");
+          return encodeURIComponent(LZString.compressToEncodedURIComponent(raw));
         } catch {
-          // Handle unicode by encoding to UTF-8 bytes first
-          const str = JSON.stringify(studentOrId);
-          const bytes = new TextEncoder().encode(str);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-          return encodeURIComponent(btoa(binary));
+          try {
+            return encodeURIComponent(btoa(raw));
+          } catch {
+            // Handle unicode by encoding to UTF-8 bytes first
+            const str = raw;
+            const bytes = new TextEncoder().encode(str);
+            let binary = "";
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            return encodeURIComponent(btoa(binary));
+          }
         }
       })();
 
