@@ -96,3 +96,6 @@ Notes:
 ```
 
 This ensures links like `/verify/<id>` work when opened directly (e.g., from a scanned QR link).
+
+Print behavior note:
+- The printed/downloaded certificate no longer prints the full embedded payload (very long link) to avoid multi-page certificates; the PDF shows a short verify URL and the QR code which contains the full payload. Scan the QR to verify or copy the short link to open the certificate page. (This keeps printed certificates compact.)

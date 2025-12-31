@@ -39,10 +39,11 @@ const StudentList = () => {
     const storedStudents = getStudents();
     
     // Generate QR codes for all students (embed student data so QR verification works on other devices)
+    // Use a moderate size for list thumbnails to save time; the preview/download will use a high-res QR.
     const studentsWithQR = await Promise.all(
       storedStudents.map(async (student) => ({
         ...student,
-        qrCode: await generateQRCode(student),
+        qrCode: await generateQRCode(student, 200),
       }))
     );
     
@@ -86,6 +87,9 @@ const StudentList = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
+    // Regenerate a high-resolution QR for the printable certificate so scanning the PDF works reliably
+    const printQr = await generateQRCode(student, 600);
+
     // Embed student data in the printed verify link as fragment so servers won't see the long payload
     const verifyLink = `${window.location.origin}/verify/${student.id}#data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
 
@@ -103,6 +107,9 @@ const StudentList = () => {
               border: 8px double #1a365d;
               padding: 40px;
               background: linear-gradient(135deg, #fefce8 0%, #fff 50%, #fefce8 100%);
+              /* Avoid breaking the certificate across pages when printing */
+              page-break-inside: avoid;
+              break-inside: avoid;
             }
             .header { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; }
             .logo { width: 80px; height: 80px; background: #1a365d; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32px; font-weight: bold; }
@@ -184,13 +191,13 @@ const StudentList = () => {
                 <p class="title">Director, ICES</p>
               </div>
               <div class="qr-section">
-                <img src="${student.qrCode}" alt="QR Code" />
+                <img src="${printQr}" alt="QR Code" style="width:120px;height:120px;" />
                 <p>Scan to verify</p>
               </div>
             </div>
             
             <p class="verify-url">Verify at: ${window.location.origin}/verify/${student.id}</p>
-            <p class="verify-url" style="word-break:break-all; font-size:11px; color:#888; margin-top:6px;">Full link: ${verifyLink}</p>
+            <p class="verify-url" style="font-size:11px; color:#888; margin-top:6px;">Scan the QR to verify or visit: ${window.location.origin}/verify/${student.id}</p>
           </div>
           <script>
             window.onload = function() { window.print(); }

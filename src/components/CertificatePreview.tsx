@@ -104,11 +104,15 @@ const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
           {/* QR Code */}
           <div className="text-center">
             {qrCode ? (
-              <img
-                src={qrCode}
-                alt="QR Code for verification"
-                className="mb-2 h-24 w-24 rounded-lg"
-              />
+              <a href={qrCode} target="_blank" rel="noopener noreferrer" title="Open full QR image">
+                <img
+                  src={qrCode}
+                  alt="QR Code for verification"
+                  className="mb-2 h-24 w-24 rounded-lg"
+                  width={150}
+                  height={150}
+                />
+              </a>
             ) : (
               <div className="mb-2 flex h-24 w-24 items-center justify-center rounded-lg bg-muted">
                 <span className="text-xs text-muted-foreground">QR Code</span>

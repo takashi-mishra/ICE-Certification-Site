@@ -1,7 +1,10 @@
 import QRCode from "qrcode";
 import type { Student } from "@/types/student";
 
-export const generateQRCode = async (studentOrId: string | Student): Promise<string> => {
+export const generateQRCode = async (
+  studentOrId: string | Student,
+  size = 300
+): Promise<string> => {
   // If a full student object is passed, embed it as base64 in the verify URL so
   // verification can happen on any device without relying on localStorage.
   let verifyUrl: string;
@@ -33,9 +36,11 @@ export const generateQRCode = async (studentOrId: string | Student): Promise<str
   }
 
   try {
+    // Increase size and error correction for dense payloads so scanners can reliably decode
     const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-      width: 150,
-      margin: 2,
+      width: size,
+      margin: 4,
+      errorCorrectionLevel: "H",
       color: {
         dark: "#1a1a2e",
         light: "#ffffff",
