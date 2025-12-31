@@ -59,8 +59,10 @@ const StudentList = () => {
     return () => window.removeEventListener("studentsUpdated", handleStorageChange);
   }, []);
 
-  const handlePreview = (student: StudentWithQR) => {
-    setSelectedStudent(student);
+  const handlePreview = async (student: StudentWithQR) => {
+    // Generate a higher-res QR for the preview to improve scan reliability
+    const highRes = await generateQRCode(student, 400);
+    setSelectedStudent({ ...student, qrCode: highRes || student.qrCode });
     setIsPreviewOpen(true);
   };
 
@@ -92,6 +94,11 @@ const StudentList = () => {
 
     // Embed student data in the printed verify link as fragment so servers won't see the long payload
     const verifyLink = `${window.location.origin}/verify/${student.id}#data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
+
+    // Show a toast if QR generation failed and we'll use a placeholder
+    if (!printQr) {
+      toast({ title: "High-res QR generation failed", description: "The printable certificate will include a placeholder QR. Try again or check console for errors." });
+    }
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -191,7 +198,7 @@ const StudentList = () => {
                 <p class="title">Director, ICES</p>
               </div>
               <div class="qr-section">
-                <img src="${printQr}" alt="QR Code" style="width:120px;height:120px;" />
+                ${printQr ? `<img src="${printQr}" alt="QR Code" style="width:120px;height:120px;" />` : `<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#666">QR unavailable</div>`}
                 <p>Scan to verify</p>
               </div>
             </div>
@@ -200,7 +207,18 @@ const StudentList = () => {
             <p class="verify-url" style="font-size:11px; color:#888; margin-top:6px;">Scan the QR to verify or visit: ${window.location.origin}/verify/${student.id}</p>
           </div>
           <script>
-            window.onload = function() { window.print(); }
+            (function(){
+              const img = document.querySelector('.qr-section img');
+              const triggerPrint = () => setTimeout(()=>{ window.focus(); window.print(); }, 150);
+              if (img) {
+                if (img.complete) triggerPrint();
+                else img.addEventListener('load', triggerPrint);
+                // fallback in case load event doesn't fire
+                setTimeout(triggerPrint, 500);
+              } else {
+                window.addEventListener('load', triggerPrint);
+              }
+            })();
           </script>
         </body>
       </html>
