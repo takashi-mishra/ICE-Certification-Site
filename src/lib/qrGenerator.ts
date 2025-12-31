@@ -53,19 +53,31 @@ export const generateQRCode = async (
   }
 
   try {
-    // Increase size and error correction for dense payloads so scanners can reliably decode
-    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-      width: size,
-      margin: 4,
-      errorCorrectionLevel: "H",
-      color: {
-        dark: "#1a1a2e",
-        light: "#ffffff",
-      },
-    });
-    return qrDataUrl;
-  } catch (error) {
-    console.error("Error generating QR code:", error);
-    return "";
-  }
+      // Increase size and error correction for dense payloads so scanners can reliably decode
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: size,
+        margin: 4,
+        errorCorrectionLevel: "H",
+        color: {
+          dark: "#1a1a2e",
+          light: "#ffffff",
+        },
+      });
+      return qrDataUrl;
+    } catch (error) {
+      // If dense payload made QR generation fail, try a simpler short URL QR as a fallback
+      console.error("Error generating QR code with payload, falling back to short URL:", error);
+      try {
+        const fallbackUrl = `${window.location.origin}/verify/${typeof studentOrId === "string" ? studentOrId : (studentOrId as Student).id}`;
+        const fallbackQr = await QRCode.toDataURL(fallbackUrl, {
+          width: Math.max(200, size / 2),
+          margin: 4,
+          errorCorrectionLevel: "M",
+        });
+        return fallbackQr;
+      } catch (err2) {
+        console.error("Fallback QR generation also failed:", err2);
+        return "";
+      }
+    }
 };

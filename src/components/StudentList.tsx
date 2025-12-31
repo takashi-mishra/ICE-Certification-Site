@@ -61,9 +61,22 @@ const StudentList = () => {
 
   const handlePreview = async (student: StudentWithQR) => {
     // Generate a higher-res QR for the preview to improve scan reliability
-    const highRes = await generateQRCode(student, 400);
+    let highRes = await generateQRCode(student, 400);
+    let previewFallback = false;
+
+    // Fallback to simple short URL QR if payload-based QR failed
+    if (!highRes) {
+      console.warn("Preview high-res payload QR failed, trying short URL...");
+      highRes = await generateQRCode(student.id, 400);
+      previewFallback = !!highRes;
+    }
+
     setSelectedStudent({ ...student, qrCode: highRes || student.qrCode });
     setIsPreviewOpen(true);
+
+    if (previewFallback) {
+      toast({ title: "Using short-link QR", description: "Preview uses a short verify link QR because the full payload was too large." });
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -90,7 +103,30 @@ const StudentList = () => {
     if (!printWindow) return;
 
     // Regenerate a high-resolution QR for the printable certificate so scanning the PDF works reliably
-    const printQr = await generateQRCode(student, 600);
+    let printQr = await generateQRCode(student, 600);
+    let fallbackUsed = false;
+
+    // If generation failed, try fallback using short URL (no embedded payload)
+    if (!printQr) {
+      console.warn("High-res QR for payload failed, retrying with short URL...");
+      printQr = await generateQRCode(student.id, 600);
+      fallbackUsed = !!printQr;
+    }
+
+    // If still failed, try a smaller size (some QR libs choke on very large images)
+    if (!printQr) {
+      console.warn("Fallback short-URL QR failed, trying smaller size...");
+      printQr = await generateQRCode(student.id, 300);
+      fallbackUsed = !!printQr || fallbackUsed;
+    }
+
+    // If still no QR available, user will see a placeholder in printed certificate
+    if (!printQr) {
+      console.error("All QR generation attempts failed for student", student.id);
+      toast({ title: "QR generation error", description: "Could not generate QR for this certificate. See console for details." });
+    } else if (fallbackUsed) {
+      toast({ title: "Using short-link QR", description: "Full payload QR was too large, using short verify link instead." });
+    }
 
     // Embed student data in the printed verify link as fragment so servers won't see the long payload
     const verifyLink = `${window.location.origin}/verify/${student.id}#data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
