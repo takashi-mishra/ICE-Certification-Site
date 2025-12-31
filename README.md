@@ -87,3 +87,12 @@ How to test:
 Notes:
 - The app still supports local verification (localStorage) when accessed on the original device.
 - For stronger security in production, consider signing the payload on a server so it cannot be forged locally.
+- If deploying to Vercel or other static hosts, add a rewrite so SPA routes (like `/verify/:id`) return `index.html`. Example `vercel.json`:
+
+```json
+{
+  "rewrites": [ { "source": "/(.*)", "destination": "/index.html" } ]
+}
+```
+
+This ensures links like `/verify/<id>` work when opened directly (e.g., from a scanned QR link).

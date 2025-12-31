@@ -86,8 +86,8 @@ const StudentList = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    // Embed student data in the printed verify link so scanners can verify on other devices
-    const verifyLink = `${window.location.origin}/verify/${student.id}?data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
+    // Embed student data in the printed verify link as fragment so servers won't see the long payload
+    const verifyLink = `${window.location.origin}/verify/${student.id}#data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -189,7 +189,8 @@ const StudentList = () => {
               </div>
             </div>
             
-            <p class="verify-url">Verify at: ${verifyLink}</p>
+            <p class="verify-url">Verify at: ${window.location.origin}/verify/${student.id}</p>
+            <p class="verify-url" style="word-break:break-all; font-size:11px; color:#888; margin-top:6px;">Full link: ${verifyLink}</p>
           </div>
           <script>
             window.onload = function() { window.print(); }

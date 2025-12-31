@@ -7,6 +7,7 @@ export const generateQRCode = async (studentOrId: string | Student): Promise<str
   let verifyUrl: string;
 
   if (typeof studentOrId === "string") {
+    // Simple ID link (no embedded payload)
     verifyUrl = `${window.location.origin}/verify/${studentOrId}`;
   } else {
     try {
@@ -22,7 +23,9 @@ export const generateQRCode = async (studentOrId: string | Student): Promise<str
           return encodeURIComponent(btoa(binary));
         }
       })();
-      verifyUrl = `${window.location.origin}/verify/${studentOrId.id}?data=${payload}`;
+
+      // Use fragment/hash so servers/proxies don't treat the long payload as part of the request URL
+      verifyUrl = `${window.location.origin}/verify/${studentOrId.id}#data=${payload}`;
     } catch (err) {
       // Fallback to basic verify URL on error
       verifyUrl = `${window.location.origin}/verify/${studentOrId.id}`;

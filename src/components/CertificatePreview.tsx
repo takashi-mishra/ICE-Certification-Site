@@ -140,10 +140,13 @@ const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
               verifyLink = `${window.location.origin}/verify/${student.id}`;
             }
 
+            // Show a short (clean) link in the UI but copy the full link (with embedded payload) to clipboard.
+            const verifyShort = `${window.location.origin}/verify/${student.id}`;
+
             return (
               <div className="flex items-center justify-center gap-3">
                 <p className="text-xs text-muted-foreground truncate max-w-[420px]">
-                  Verify at: <a className="underline" href={verifyLink} target="_blank" rel="noopener noreferrer">{verifyLink}</a>
+                  Verify at: <a className="underline" href={verifyShort} target="_blank" rel="noopener noreferrer">{verifyShort}</a>
                 </p>
                 <button
                   type="button"
@@ -152,13 +155,10 @@ const CertificatePreview = ({ student, qrCode }: CertificatePreviewProps) => {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(verifyLink);
-                      // Use the global toast system if available
                       try {
-                        // dynamic import to avoid circular deps in some setups
                         const { toast } = await import("@/hooks/use-toast");
                         toast({ title: "Verification link copied", description: "You can paste it anywhere to share." });
                       } catch {
-                        // fallback to alert if toast isn't available
                         alert("Verification link copied to clipboard");
                       }
                     } catch (err) {

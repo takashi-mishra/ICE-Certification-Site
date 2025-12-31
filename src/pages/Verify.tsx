@@ -21,9 +21,16 @@ const Verify = () => {
       // Diagnostic: log incoming studentId and query params
       console.debug("Verify page params:", { studentId, search: window.location.search });
 
-      // Check for embedded student data in the query param (QR payload)
+      // Check for embedded student data in the URL fragment/hash first (QR payload)
       const params = new URLSearchParams(window.location.search);
-      const dataParam = params.get("data");
+      let dataParam = params.get("data") ?? undefined;
+
+      if (!dataParam && window.location.hash) {
+        const hash = window.location.hash.startsWith("#") ? window.location.hash.substring(1) : window.location.hash;
+        const hashParams = new URLSearchParams(hash);
+        dataParam = hashParams.get("data") ?? undefined;
+        if (dataParam) console.debug("Found QR payload in URL hash");
+      }
 
       if (dataParam) {
         try {
