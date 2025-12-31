@@ -71,3 +71,19 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+---
+
+## Certificate verification behavior ✅
+
+- QR codes now embed the full certificate payload (base64-encoded JSON) so scanning the QR opens a verification URL that contains the data needed to display the certificate.
+- This means scanning from another device (mobile/other browser) will show the verified certificate even if the original device's localStorage is not available.
+
+How to test:
+
+1. Generate a certificate in the app and open the certificate preview or Download it.
+2. Scan the QR code with another device (phone). The link opened will contain an embedded payload and should render the verified certificate page.
+
+Notes:
+- The app still supports local verification (localStorage) when accessed on the original device.
+- For stronger security in production, consider signing the payload on a server so it cannot be forged locally.

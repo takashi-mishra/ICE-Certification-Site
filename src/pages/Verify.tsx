@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import CertificatePreview from "@/components/CertificatePreview";
 import { CheckCircle2, XCircle, Award, Calendar, Users, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { getStudentById } from "@/lib/studentStorage";
+import { getStudentById, addStudents } from "@/lib/studentStorage";
 import { generateQRCode } from "@/lib/qrGenerator";
 import type { Student } from "@/types/student";
 
@@ -18,18 +18,42 @@ const Verify = () => {
 
   useEffect(() => {
     const loadStudent = async () => {
+      // Check for embedded student data in the query param (QR payload)
+      const params = new URLSearchParams(window.location.search);
+      const dataParam = params.get("data");
+
+      if (dataParam) {
+        try {
+          const decoded = JSON.parse(atob(decodeURIComponent(dataParam)));
+          setStudent(decoded as Student);
+
+          // Persist to storage if not already present so verification works offline later
+          if (!getStudentById(decoded.id)) {
+            addStudents([decoded]);
+          }
+
+          const qr = await generateQRCode(decoded);
+          setQrCode(qr);
+          setIsLoading(false);
+          return;
+        } catch (err) {
+          console.warn("Failed to decode QR payload, falling back to ID lookup:", err);
+        }
+      }
+
       if (studentId) {
         const foundStudent = getStudentById(studentId);
         setStudent(foundStudent);
-        
+
         if (foundStudent) {
-          const qr = await generateQRCode(foundStudent.id);
+          const qr = await generateQRCode(foundStudent);
           setQrCode(qr);
         }
       }
+
       setIsLoading(false);
     };
-    
+
     loadStudent();
   }, [studentId]);
 

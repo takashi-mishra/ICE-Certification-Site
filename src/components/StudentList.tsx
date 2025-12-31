@@ -38,11 +38,11 @@ const StudentList = () => {
   const loadStudents = async () => {
     const storedStudents = getStudents();
     
-    // Generate QR codes for all students
+    // Generate QR codes for all students (embed student data so QR verification works on other devices)
     const studentsWithQR = await Promise.all(
       storedStudents.map(async (student) => ({
         ...student,
-        qrCode: await generateQRCode(student.id),
+        qrCode: await generateQRCode(student),
       }))
     );
     
@@ -85,6 +85,9 @@ const StudentList = () => {
     // Create a printable version
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+
+    // Embed student data in the printed verify link so scanners can verify on other devices
+    const verifyLink = `${window.location.origin}/verify/${student.id}?data=${encodeURIComponent(btoa(JSON.stringify(student)))}`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -186,7 +189,7 @@ const StudentList = () => {
               </div>
             </div>
             
-            <p class="verify-url">Verify at: ${window.location.origin}/verify/${student.id}</p>
+            <p class="verify-url">Verify at: ${verifyLink}</p>
           </div>
           <script>
             window.onload = function() { window.print(); }
